@@ -1,0 +1,139 @@
+from django.db import models
+from django.contrib.auth.models import  BaseUserManager
+from django.utils import timezone
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from parking.models import (ParkingPlaza)
+import os
+from datetime import datetime ,date
+from django.conf import settings
+
+
+
+
+def save_profile_image(instance, filename):
+    file_extension = os.path.splitext(filename)[1].lstrip('.')
+    current_datetime = datetime.now().strftime('%Y%m%d%H%M%S')
+    target_dir = f'profile_images/{instance.user.pk}'
+    file_dir = os.path.join(settings.MEDIA_ROOT, target_dir)
+    if not os.path.isdir(file_dir):
+        os.makedirs(file_dir, 0o777)
+    return os.path.join(target_dir, f'{current_datetime}.{file_extension}')
+
+
+
+
+
+
+
+class access(models.Model):
+    name = models.CharField(max_length=50)
+    
+    class Meta:
+        db_table = 'useraccess'
+
+class Role(models.Model):
+    name = models.CharField(max_length=50)
+    access_ids = models.TextField(blank=True)
+    created_on = models.DateTimeField(auto_now_add=True)
+    active=models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'role'
+    
+    
+    def set_access_ids(self, id_list):
+        # Convert list to string
+        self.ids = ','.join(str(id) for id in id_list)
+
+    def get_access_ids(self):
+        # Convert string back to list
+        return self.ids.split(',')
+
+    def __str__(self):
+        return self.name
+
+class CustomUserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('The Email field must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
+
+class Users(AbstractBaseUser, PermissionsMixin):
+    email = models.EmailField(unique=True)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, null=True, blank=True)
+    cnic = models.CharField(max_length=13, null=True, blank=True)
+    age = models.IntegerField(null=True, blank=True)
+    gender = models.CharField(max_length=100, null=True, blank=True)
+    hired_date = models.DateField(auto_now_add=True)
+    hired_time = models.TimeField(auto_now_add=True)
+    auth_key = models.CharField(max_length=100, null=True, blank=True)
+    register_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
+    profile_image = models.FileField(upload_to='profile_images/', null=True, blank=True)
+    status = models.CharField(max_length=100, null=True, blank=True)
+
+    # Fields required by AbstractBaseUser
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(default=timezone.now)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = CustomUserManager()
+
+    def __str__(self):
+        return self.email
+    
+    
+    class Meta:
+        db_table = 'users'
+        
+        
+        
+class UserAllocation(models.Model):
+    user = models.ForeignKey(Users,on_delete=models.CASCADE)
+    parking_plaza = models.ForeignKey(ParkingPlaza,on_delete=models.CASCADE)
+    assign_date = models.DateField(auto_now_add=True)
+    assign_time = models.TimeField(auto_now_add=True)
+    upload_date = models.DateField(auto_now_add=True)
+    upload_time = models.TimeField(auto_now_add=True)
+    status = models.BooleanField(default=False)
+    
+    
+    def __str__(self):
+        return f'{self.user} and {self.parking_plaza}'
+    
+    
+    class Meta:
+        db_table = 'userAllocation'
+    
+    
+    
+class UserAttendance(models.Model):
+    ATTENDENCE_STATUS = (
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('leave', 'Leave')
+    )
+    user = models.ForeignKey(Users,on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+    attendence_status = models.CharField(max_length=20, choices=ATTENDENCE_STATUS, null=True, blank=True)
+    updated_by = models.ForeignKey(Users, on_delete=models.CASCADE)
+    latitude = models.FloatField(decimal_places=15, max_digits=53)
+    longitute = models.FloatField(decimal_places=15, max_digits=53)
+    address = models.CharField(max_length=155, null=True, blank=True)
+    
+    def __str__(self):
+        return f'{self.user} and {self.attendence_status}'
+    
+    class Meta:
+        db_table = 'userAttendence'

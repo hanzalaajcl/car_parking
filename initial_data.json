@@ -1,0 +1,22 @@
+[
+{
+  "model": "authentication.role",
+  "pk": 1,
+  "fields": {
+    "name": "user",
+    "access_ids": "",
+    "created_on": "2024-01-15T12:35:48.322Z",
+    "active": true
+  }
+},
+{
+  "model": "authentication.role",
+  "pk": 2,
+  "fields": {
+    "name": "admin",
+    "access_ids": "",
+    "created_on": "2024-01-15T12:35:52.665Z",
+    "active": true
+  }
+}
+]
