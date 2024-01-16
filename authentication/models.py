@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import  BaseUserManager
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from parking.models import (ParkingPlaza)
 import os
 from datetime import datetime ,date
 from django.conf import settings
@@ -21,15 +20,11 @@ def save_profile_image(instance, filename):
 
 
 
-
-
-
-
-class access(models.Model):
+class Access(models.Model):
     name = models.CharField(max_length=50)
     
     class Meta:
-        db_table = 'useraccess'
+        db_table = 'User_Access'
 
 class Role(models.Model):
     name = models.CharField(max_length=50)
@@ -75,7 +70,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     gender = models.CharField(max_length=100, null=True, blank=True)
     hired_date = models.DateField(auto_now_add=True)
     hired_time = models.TimeField(auto_now_add=True)
-    auth_key = models.CharField(max_length=100, null=True, blank=True)
+    auth_key = models.CharField(max_length=512, null=True, blank=True)
     register_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
     profile_image = models.FileField(upload_to='profile_images/', null=True, blank=True)
     status = models.CharField(max_length=100, null=True, blank=True)
@@ -95,45 +90,30 @@ class Users(AbstractBaseUser, PermissionsMixin):
     
     
     class Meta:
-        db_table = 'users'
+        db_table = 'Users'
         
         
         
-class UserAllocation(models.Model):
-    user = models.ForeignKey(Users,on_delete=models.CASCADE)
-    parking_plaza = models.ForeignKey(ParkingPlaza,on_delete=models.CASCADE)
-    assign_date = models.DateField(auto_now_add=True)
-    assign_time = models.TimeField(auto_now_add=True)
-    upload_date = models.DateField(auto_now_add=True)
-    upload_time = models.TimeField(auto_now_add=True)
-    status = models.BooleanField(default=False)
-    
-    
-    def __str__(self):
-        return f'{self.user} and {self.parking_plaza}'
-    
-    
-    class Meta:
-        db_table = 'userAllocation'
+
     
     
     
-class UserAttendance(models.Model):
+class User_Attendance(models.Model):
     ATTENDENCE_STATUS = (
         ('present', 'Present'),
         ('absent', 'Absent'),
-        ('leave', 'Leave')
+        ('leave', 'On Leave')
     )
     user = models.ForeignKey(Users,on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
-    attendence_status = models.CharField(max_length=20, choices=ATTENDENCE_STATUS, null=True, blank=True)
-    updated_by = models.ForeignKey(Users, on_delete=models.CASCADE)
-    latitude = models.FloatField(decimal_places=15, max_digits=53)
-    longitute = models.FloatField(decimal_places=15, max_digits=53)
+    status = models.CharField(max_length=20, choices=ATTENDENCE_STATUS, null=True, blank=True)
+    updated_by = models.ForeignKey(Users, on_delete=models.CASCADE,related_name='attendance')
+    latitude = models.FloatField()
+    longitude = models.FloatField()
     address = models.CharField(max_length=155, null=True, blank=True)
     
     def __str__(self):
-        return f'{self.user} and {self.attendence_status}'
+        return f'{self.user} and {self.status}'
     
     class Meta:
-        db_table = 'userAttendence'
+        db_table = 'User_Attendance'

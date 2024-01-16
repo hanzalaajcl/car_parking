@@ -3,12 +3,12 @@ from authentication.models import (Users)
 
 
 # Create your models here.
-class ParkingPlaza(models.Model):
+class Parking_Plaza(models.Model):
     name = models.CharField(max_length=50, blank=True,null = True)
     address = models.CharField(max_length=50, blank=True,null = True)
-    area = models.FloatField(decimal_places=15, max_digits=53)
-    latitude = models.FloatField(decimal_places=15, max_digits=53)
-    longitute = models.FloatField(decimal_places=15, max_digits=53)
+    area = models.FloatField()
+    latitude = models.FloatField()
+    longitude = models.FloatField()
     register_by = models.ForeignKey(Users,on_delete=models.CASCADE)
     register_date = models.DateField(auto_now_add=True)
     register_time = models.TimeField(auto_now_add=True)
@@ -19,7 +19,7 @@ class ParkingPlaza(models.Model):
     
     
     class Meta:
-        db_table = 'parkingPlaza'
+        db_table = 'Parking_Plaza'
     
     
 class Vehicle(models.Model):
@@ -39,20 +39,62 @@ class Vehicle(models.Model):
         db_table = 'vehicle'
     
     
-class ParkingVehicle(models.Model):
+class Parking_Vehicle(models.Model):
     registration_number = models.CharField(max_length=256)
     vehicle_type = models.CharField(max_length = 155)
     vehicle_model = models.CharField(max_length = 155)
     check_in_date = models.DateField(auto_now_add=True)
     check_in_time = models.TimeField(auto_now_add=True)
-    check_in_plaza = models.ForeignKey(ParkingPlaza,on_delete = models.CASCADE)
+    check_in_plaza = models.ForeignKey(Parking_Plaza,on_delete = models.CASCADE)
     check_out_date = models.DateField(auto_now_add=True)
     check_out_time = models.TimeField(auto_now_add=True)
     check_in_by = models.ForeignKey(Users,on_delete=models.CASCADE)
-    check_out_by = models.ForeignKey(Users,on_delete=models.CASCADE,blank = True,null= True)
+    check_out_by = models.ForeignKey(Users,on_delete=models.CASCADE,blank = True,null= True,related_name= "user_who_checked_out")
     
     def __str__(self):
         return self.registration_number
     
     class Meta:
-        db_table = 'parkingVehicle'
+        db_table = 'Parking_Vehicle'
+        
+        
+        
+class User_Allocation(models.Model):
+    user = models.ForeignKey(Users,on_delete=models.CASCADE)
+    assigned_by = models.ForeignKey(Users,on_delete=models.CASCADE,related_name='user_who_assigned')
+    parking_plaza = models.ForeignKey(Parking_Plaza,on_delete=models.CASCADE)
+    assign_date = models.DateField(auto_now_add=True)
+    assign_time = models.TimeField(auto_now_add=True)
+    upload_date = models.DateField(auto_now_add=True)
+    upload_time = models.TimeField(auto_now_add=True)
+    status = models.BooleanField(default=False)
+    
+    
+    def __str__(self):
+        return f'{self.user} and {self.parking_plaza}'
+    
+    
+    class Meta:
+        db_table = 'User_Allocation'
+        
+        
+        
+        
+        
+class Parking_Plaza_Log(models.Model):
+    name = models.CharField(max_length=50, blank=True, null=True)
+    address = models.CharField(max_length=50, blank=True, null=True)
+    area = models.FloatField()
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    register_by = models.ForeignKey(Users, on_delete=models.CASCADE)
+    register_date = models.DateField(auto_now_add=True)
+    register_time = models.TimeField(auto_now_add=True)
+    status = models.BooleanField(default=False)
+    log_timestamp = models.DateTimeField(auto_now_add=True)  # Timestamp for logging
+    
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        db_table = 'Parking_Plaza_Log'

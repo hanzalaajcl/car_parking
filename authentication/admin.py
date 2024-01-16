@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import (Users,Role,access,UserAllocation,UserAttendance)
+from .models import (Users,Role,Access,User_Attendance)
 
 # Register your models here.
 
-@admin.register(access)
+@admin.register(Access)
 class accessAdmin(admin.ModelAdmin):
     list_display = ['name']
 
@@ -17,12 +17,7 @@ class UsersAdmin(admin.ModelAdmin):
     list_display = ['email','role','cnic','age','gender','auth_key','profile_image','status']
     
     
-@admin.register(UserAllocation)
-class UserAllocationAdmin(admin.ModelAdmin):
-    list_display = ['user','parking_plaza','assign_date','assign_time','upload_date','upload_time','status']
-    
-    
-    
-@admin.register(UserAttendance)
+
+@admin.register(User_Attendance)
 class UserAttendanceAdmin(admin.ModelAdmin):
-    list_display = ['user','date','attendence_status','updated_by','latitude','longitute','address']
+    list_display = ['user','date','status','updated_by','latitude','longitude','address']
