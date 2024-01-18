@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import (CustomTokenObtainPairSerializer,CreateUserSerializer,CustomPasswordChangeSerializer)
+from .serializers import (CustomTokenObtainPairSerializer,CreateUserSerializer,CustomPasswordChangeSerializer,UserAttendanceSerializer)
 from rest_framework import generics, permissions
 from .permissions import IsAdmin,IsUser
 from rest_framework.views import APIView
@@ -65,7 +65,7 @@ class ChangePasswordVew(generics.CreateAPIView):
     
 class UserAttendence(generics.CreateAPIView):
     permission_classes = [IsAdmin]
-    # serializer_class = UserAttendanceSerializer
+    serializer_class = UserAttendanceSerializer
     
     
     
