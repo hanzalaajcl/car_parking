@@ -1,22 +1,49 @@
 [
+
+  {
+    "model": "authentication.role",
+    "pk": 1,
+    "fields": {
+      "name": "user",
+      "access_ids": "",
+      "created_on": "2024-01-15T12:35:48.322Z",
+      "active": true
+    }
+  },
+  {
+    "model": "authentication.role",
+    "pk": 2,
+    "fields": {
+      "name": "admin",
+      "access_ids": "",
+      "created_on": "2024-01-15T12:35:52.665Z",
+      "active": true
+    }
+  },
+  
 {
-  "model": "authentication.role",
+  "model": "authentication.users",
   "pk": 1,
   "fields": {
-    "name": "user",
-    "access_ids": "",
-    "created_on": "2024-01-15T12:35:48.322Z",
-    "active": true
-  }
-},
-{
-  "model": "authentication.role",
-  "pk": 2,
-  "fields": {
-    "name": "admin",
-    "access_ids": "",
-    "created_on": "2024-01-15T12:35:52.665Z",
-    "active": true
+    "password": "pbkdf2_sha256$600000$iVLm2rwcbVyFHNksEkpCIr$TFXsYpOZ0+fA9rgzjVurmsag2eAeyoegtDLWiAM2jB0=",
+    "last_login": "2024-01-15T11:55:53Z",
+    "is_superuser": true,
+    "email": "admin@gmail.com",
+    "role": 2,
+    "cnic": null,
+    "age": null,
+    "gender": null,
+    "hired_date": "2024-01-15",
+    "hired_time": "11:55:38.773",
+    "auth_key": null,
+    "register_by": null,
+    "profile_image": "",
+    "status": null,
+    "is_active": true,
+    "is_staff": true,
+    "date_joined": "2024-01-15T11:55:38Z",
+    "groups": [],
+    "user_permissions": []
   }
 }
 ]

@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import (Parking_Plaza,Vehicle,Parking_Vehicle,User_Allocation)
+from .models import (ParkingPlaza,Vehicle,ParkingVehicle,UserAllocation,GlobalConfiguration)
 
 # Register your models here.
 
 
-@admin.register(Parking_Plaza)
+@admin.register(ParkingPlaza)
 class ParkingPlazaAdmin(admin.ModelAdmin):
     list_display = ['name','address','area','latitude','longitude','register_by','register_date','register_time','status']
     
@@ -17,12 +17,17 @@ class VehicleAdmin(admin.ModelAdmin):
     
     
     
-@admin.register(Parking_Vehicle)
+@admin.register(ParkingVehicle)
 class VehicleAdmin(admin.ModelAdmin):
     list_display = ['vehicle_type','vehicle_model','registration_number','check_in_date','check_in_time','check_in_plaza','check_out_date','check_out_time'
                     ,'check_in_by','check_out_by']
     
     
-@admin.register(User_Allocation)
+@admin.register(UserAllocation)
 class UserAllocationAdmin(admin.ModelAdmin):
     list_display = ['user','parking_plaza','assign_date','assign_time','upload_date','upload_time','status']
+    
+    
+@admin.register(GlobalConfiguration)
+class GlobalConfigurationAdmin(admin.ModelAdmin):
+    list_display = ['name','value']

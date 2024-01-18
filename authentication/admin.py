@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import (Users,Role,Access,User_Attendance)
+from .models import (Users,Role,Access,UserAttendance)
 
 # Register your models here.
 
@@ -18,6 +18,6 @@ class UsersAdmin(admin.ModelAdmin):
     
     
 
-@admin.register(User_Attendance)
+@admin.register(UserAttendance)
 class UserAttendanceAdmin(admin.ModelAdmin):
     list_display = ['user','date','status','updated_by','latitude','longitude','address']

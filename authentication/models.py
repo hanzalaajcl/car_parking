@@ -3,22 +3,21 @@ from django.contrib.auth.models import  BaseUserManager
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 import os
-from datetime import datetime ,date
+from datetime import datetime
 from django.conf import settings
 
 
 
 
 def save_profile_image(instance, filename):
+    print(instance,"================================")
     file_extension = os.path.splitext(filename)[1].lstrip('.')
     current_datetime = datetime.now().strftime('%Y%m%d%H%M%S')
-    target_dir = f'profile_images/{instance.user.pk}'
+    target_dir = f'profile_images/{instance.pk}'
     file_dir = os.path.join(settings.MEDIA_ROOT, target_dir)
     if not os.path.isdir(file_dir):
         os.makedirs(file_dir, 0o777)
     return os.path.join(target_dir, f'{current_datetime}.{file_extension}')
-
-
 
 class Access(models.Model):
     name = models.CharField(max_length=50)
@@ -33,7 +32,7 @@ class Role(models.Model):
     active=models.BooleanField(default=False)
     
     class Meta:
-        db_table = 'role'
+        db_table = 'Role'
     
     
     def set_access_ids(self, id_list):
@@ -65,14 +64,18 @@ class CustomUserManager(BaseUserManager):
 class Users(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     role = models.ForeignKey(Role, on_delete=models.CASCADE, null=True, blank=True)
+    first_name = models.CharField(max_length=125, null=True, blank=True)
+    last_name = models.CharField(max_length=125, null=True, blank=True)
     cnic = models.CharField(max_length=13, null=True, blank=True)
     age = models.IntegerField(null=True, blank=True)
     gender = models.CharField(max_length=100, null=True, blank=True)
-    hired_date = models.DateField(auto_now_add=True)
-    hired_time = models.TimeField(auto_now_add=True)
+    hired_date = models.DateField()
+    hired_time = models.TimeField()
     auth_key = models.CharField(max_length=512, null=True, blank=True)
     register_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True)
-    profile_image = models.FileField(upload_to='profile_images/', null=True, blank=True)
+    register_date = models.DateField(auto_now_add=True)
+    register_time = models.TimeField(auto_now_add=True)
+    profile_image = models.FileField(upload_to=save_profile_image, null=True, blank=True)
     status = models.CharField(max_length=100, null=True, blank=True)
 
     # Fields required by AbstractBaseUser
@@ -88,6 +91,21 @@ class Users(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return self.email
     
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            print("----------------")
+            # New user, set and hash the password
+            self.set_password(self.password)
+        super().save(*args, **kwargs)
+        
+    def get_main_image(self):
+        profile_photo_path = None
+        try:
+            profile_photo_index = self.profile_image.path.split("/").index('uploads')
+            profile_photo_path =  "/"+"/".join(self.profile_image.path.split("/")[profile_photo_index:])
+        except Exception: pass
+        return profile_photo_path
+    
     
     class Meta:
         db_table = 'Users'
@@ -98,7 +116,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     
     
     
-class User_Attendance(models.Model):
+class UserAttendance(models.Model):
     ATTENDENCE_STATUS = (
         ('present', 'Present'),
         ('absent', 'Absent'),
@@ -106,7 +124,7 @@ class User_Attendance(models.Model):
     )
     user = models.ForeignKey(Users,on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=ATTENDENCE_STATUS, null=True, blank=True)
+    status = models.CharField(max_length=20, choices=ATTENDENCE_STATUS,default = 'present')
     updated_by = models.ForeignKey(Users, on_delete=models.CASCADE,related_name='attendance')
     latitude = models.FloatField()
     longitude = models.FloatField()
@@ -116,4 +134,4 @@ class User_Attendance(models.Model):
         return f'{self.user} and {self.status}'
     
     class Meta:
-        db_table = 'User_Attendance'
+        db_table = 'UserAttendance'

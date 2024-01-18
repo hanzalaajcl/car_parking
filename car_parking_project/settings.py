@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+
 # import dotenv
 # dotenv.load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,7 +29,7 @@ SECRET_KEY = 'django-insecure-y%*ykp7(dqx3)^#bfwe3e0cf@$m^@c_&sk$u5+a42^at6a!gq6
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'drf_yasg',
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
@@ -47,6 +49,8 @@ INSTALLED_APPS = [
     # 'authentication',
     'django_rest_passwordreset',
     'authentication.apps.AuthenticationConfig',
+    'parking',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -57,6 +61,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    'corsheaders.middleware.CorsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'car_parking_project.urls'
@@ -140,13 +147,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-]
-UPLOADS_DIR_NAME = 'media'
+
+
+PROJECT_ROOT = os.path.abspath(os.path.split(os.path.split(__file__)[0])[0])
+
+UPLOADS_DIR_NAME = 'uploads'
 MEDIA_URL = f'/{UPLOADS_DIR_NAME}/'
+MEDIA_ROOT = os.path.join(PROJECT_ROOT, f'{UPLOADS_DIR_NAME}')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -198,8 +205,35 @@ SIMPLE_JWT = {
 }
 
 REST_AUTH = {
+    'LOGIN_SERIALIZER': 'authentication.serializers.CustomTokenObtainPairSerializer',
+    'TOKEN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
+    'JWT_SERIALIZER': 'django_rest_authentication.dj_rest_auth.serializers.JWTSerializer',
+    'JWT_SERIALIZER_WITH_EXPIRATION': 'django_rest_authentication.dj_rest_auth.serializers.JWTSerializerWithExpiration',
+    'JWT_TOKEN_CLAIMS_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
+    
 
     'PASSWORD_CHANGE_SERIALIZER': 'authentication.serializers.CustomPasswordChangeSerializer',
+    
+    'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+
+    'TOKEN_MODEL': None,
+    'TOKEN_CREATOR': 'django_rest_authentication.dj_rest_auth.utils.default_create_token',
+
+    'PASSWORD_RESET_USE_SITES_DOMAIN': False,
+    'OLD_PASSWORD_FIELD_ENABLED': True,
+    'LOGOUT_ON_PASSWORD_CHANGE': True,
+    'SESSION_LOGIN': True,
+    'USE_JWT': True,
+
+    'JWT_AUTH_COOKIE': None,
+    'JWT_AUTH_REFRESH_COOKIE': None,
+    'JWT_AUTH_REFRESH_COOKIE_PATH': '/',
+    'JWT_AUTH_SECURE': False,
+    'JWT_AUTH_HTTPONLY': False,
+    'JWT_AUTH_SAMESITE': 'Lax',
+    'JWT_AUTH_RETURN_EXPIRATION': False,
+    'JWT_AUTH_COOKIE_USE_CSRF': False,
+    'JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED': False,
 
 }
 
@@ -208,4 +242,33 @@ AUTH_USER_MODEL = 'authentication.users'
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',  # Default authentication backend
+]
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = "authentication.utils.get_email_host"
+EMAIL_PORT = 587
+EMAIL_HOST_USER = 'CRMS@ajcl.net'
+EMAIL_HOST_PASSWORD = 'Voz35072'
+EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+# CORS_ORIGIN_WHITELIST = (
+#     'http://localhost:3006',
+#     'http://127.0.0.1:8000'
+# )
+CORS_ALLOW_METHODS = [
+    "DELETE","GET","OPTIONS",
+    "PATCH","POST","PUT",
+]
+CORS_ALLOW_HEADERS = [
+    "accept","accept-encoding","authorization",
+    "content-type","dnt","origin","user-agent",
+    "x-csrftoken","x-requested-with",
+    "cache-control","pragma",
 ]
