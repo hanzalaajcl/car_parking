@@ -13,7 +13,7 @@ class ParkingPlazaAdmin(admin.ModelAdmin):
     
 @admin.register(Vehicle)
 class VehicleAdmin(admin.ModelAdmin):
-    list_display = ['vehicle_type','vehicle_model','register_by','register_date','register_time','status','charges']
+    list_display = ['vehicle_type','vehicle_model','register_by','register_date','register_time','status','charges','vehicle_image']
     
     
     

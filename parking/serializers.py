@@ -2,7 +2,10 @@ from django.forms import model_to_dict
 from rest_framework.fields import empty
 from authentication.models import Role, Users
 from rest_framework import serializers, status
-from .models import ParkingPlaza,Vehicle,ParkingVehicle
+from django.db import transaction
+
+from parking.admin import UserAllocationAdmin
+from .models import ParkingPlaza, UserAllocation,Vehicle,ParkingVehicle
 
 
 
@@ -51,21 +54,21 @@ class CreateParkingVehicleCheckInSerializer(serializers.Serializer):
         self.request = request
         self.user = request.user
         self.fields["registration_number"] = serializers.CharField(required = True,write_only=True)
-        self.fields["vehicle_type"] = serializers.CharField(required = True,write_only=True)
+        # self.fields["vehicle_type"] = serializers.CharField(required = True,write_only=True)
         self.fields["vehicle_model"] = serializers.CharField(required = True,write_only=True)
-        self.fields["plaza_id"] = serializers.CharField(required = True,write_only=True)
+        # self.fields["plaza_id"] = serializers.CharField(required = True,write_only=True)
         
         
     def validate(self, attrs):
-        plaza_id = attrs.get('plaza_id')
+        # plaza_id = attrs.get('plaza_id')
         errors = None
         attrs['valid'] = True
         
-        try:
-            ParkingPlaza.objects.get(pk = plaza_id)
-        except:
-            errors = 'Parking Plaza does not exist'
-            attrs['valid'] = False
+        # try:
+        #     ParkingPlaza.objects.get(pk = plaza_id)
+        # except:
+        #     errors = 'Parking Plaza does not exist'
+        #     attrs['valid'] = False
             
         if errors is not None:
             attrs['errors'] = errors
@@ -75,15 +78,20 @@ class CreateParkingVehicleCheckInSerializer(serializers.Serializer):
     
     def create(self, validated_data):
         if validated_data['valid'] == True:
-            vehicle = ParkingVehicle.objects.create(
-                registration_number = validated_data["registration_number"],
-                vehicle_type = validated_data["vehicle_type"],
-                vehicle_model = validated_data["vehicle_model"],
-                check_in_plaza = ParkingPlaza.objects.get(pk = validated_data["plaza_id"]),
-                check_in_by = self.user
-            )
-            self.resp['message'] = 'Check in Succussfully'
-            self.resp['data'] = model_to_dict(vehicle)
+            with transaction.atomic():
+            
+                user_allocation = UserAllocation.objects.filter(user = self.user).first()
+                vehicle_obj = Vehicle.objects.filter(vehicle_model = validated_data["vehicle_model"]).first()
+                vehicle = ParkingVehicle.objects.create(
+                    registration_number = validated_data["registration_number"],
+                    vehicle_type = vehicle_obj.vehicle_type,
+                    vehicle_model = validated_data["vehicle_model"],
+                    check_in_plaza = user_allocation.parking_plaza,
+                    check_in_by = self.user
+                )
+                self.resp['status'] = True
+                self.resp['message'] = 'Check in Succussfully'
+                # self.resp['data'] = model_to_dict(vehicle)
         else:
             self.resp["status_code"] = status.HTTP_400_BAD_REQUEST
             self.resp["status"] = False

@@ -1,3 +1,4 @@
+from django.forms import model_to_dict
 from  .models import Role, UserAttendance, Users
 from rest_framework import serializers, status
 from django.db.models import Q
@@ -103,7 +104,6 @@ class CreateUserSerializer(serializers.Serializer):
         self.fields["email"] = serializers.EmailField(required = True,write_only=True)
         self.fields["first_name"] = serializers.CharField(required = True,write_only=True)
         self.fields["last_name"] = serializers.CharField(required = True,write_only=True)
-        # self.fields["password"] = serializers.CharField(required = False)
         self.fields["cnic"] = serializers.CharField(required = True,write_only=True)
         self.fields["age"] = serializers.IntegerField(required = True,write_only=True)
         self.fields["gender"] = serializers.CharField(required = True,write_only=True)
@@ -114,11 +114,11 @@ class CreateUserSerializer(serializers.Serializer):
         
     
     def validate(self, attrs):
-        print(self.request,"11111111")
         attrs['request'] = self.request
         errors = None
-        attrs['valid'] = False
+        attrs['valid'] = True
         email = attrs.get('email')
+        
         hired_date = attrs.get('hired_date')
         hired_time = attrs.get('hired_time')
         
@@ -138,17 +138,15 @@ class CreateUserSerializer(serializers.Serializer):
             
         if attrs['valid'] and profile_image is not None:
             file_type = magic.from_buffer(profile_image.read(), mime=True).split("/")[0]
-            print(file_type,"++++++++++++++++")
             if file_type not in ("image"):
                 errors = f"Image is not a valid media type."
                 print(errors)
-                attrs['valid'] = False
             else:
                 pass
         try:
             hired_date = datetime.strptime(hired_date, "%d/%m/%Y").date()
             attrs['hired_date'] = hired_date
-        except ValueError:
+        except:
             errors = "The hired date should be in the format 'DD/MM/YYYY'."
             attrs['valid'] = False
             
@@ -157,7 +155,7 @@ class CreateUserSerializer(serializers.Serializer):
             hired_time = datetime.strptime(hired_time, "%H:%M:%S").time()
             attrs['hired_time'] = hired_time
             
-        except ValueError:
+        except:
             errors = "The hired time should be in the format 'HH:MM:SS'."
             attrs['valid'] = False
             
@@ -166,6 +164,8 @@ class CreateUserSerializer(serializers.Serializer):
             attrs['valid'] = True
         else:
             attrs['error'] = errors
+            attrs['valid'] = False
+            
         return attrs
     
     
@@ -272,7 +272,96 @@ class CustomPasswordChangeSerializer(serializers.Serializer):
     
     
     
-class UserAttendanceSerializer(serializers.Serializer):
+# class UserAttendanceSerializer(serializers.Serializer):
+#     status_code = serializers.IntegerField(read_only=True,default=status.HTTP_201_CREATED)
+#     status = serializers.BooleanField(read_only=True)
+#     message = serializers.CharField(read_only=True,default=None)
+#     data = serializers.DictField(read_only=True,default={})
+    
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.resp = {'status' : False, 'message' : None,'data' : None,'status_code' : status.HTTP_200_OK} 
+#         request = self.context["request"]
+#         self.request = request
+#         self.user = request.user
+#         self.fields["user_ids"] = serializers.ListField(required = True,write_only=True)
+#         self.fields["status"] = serializers.CharField(required = True,write_only=True)
+#         self.fields["date"] = serializers.CharField(required = False,write_only=True)
+        
+#     def validate(self, attrs):
+#         errors = None
+#         attrs['valid'] = True
+#         data = attrs.get('data',None)
+#         if data is not None:
+#             try:
+#                 date = datetime.strptime(date, "%d/%m/%Y").date()
+#                 attrs['date'] = date
+#             except ValueError:
+#                 errors = "date should be in the format 'DD/MM/YYYY'."
+#                 attrs['valid'] = False
+#         else:
+#             attrs['date'] = datetime.now().date()
+                
+            
+#         user_ids = attrs.get('user_ids')
+#         print(user_ids,"================================")
+#         status = attrs.get('status')
+#         users = user_ids[0].split(",")  
+#         print(users,'++++++++++++++++')      
+#         user_id = 0
+#         users_list = []
+#         for user_pk in users:
+#             print(user_pk,"pppppppppppppppppp")
+#             user_qs = Users.objects.filter(pk = user_pk)
+#             user_id+=1
+#             if user_qs.exists():
+#                 users_list.append(user_pk)
+#             else:
+#                 errors = f"User with id {user_id} is not found."
+#                 attrs['valid'] = False
+                
+#         if status is not ['present','absent','on_leave']:
+#             errors = "Status should be 'present','absent','on_leave'."
+#             attrs['valid'] = False
+            
+#         if errors is not None:
+#             attrs['error'] = errors
+#             attrs['valid'] = False
+#         else:
+#             attrs['user_qs'] = users_list
+            
+#         return attrs
+        
+        
+#     def create(self, validated_data):
+#         if validated_data['valid'] == True:
+#             for user in validated_data['user_qs']:
+#                 for i in user:
+#                     user_attendence = UserAttendance.objects.create(
+#                         user = i,
+#                         updated_by = self.user,
+#                         status = validated_data['status']
+                        
+#                     )
+#             self.resp["status"] = True
+#             self.resp["status_code"] = status.HTTP_201_CREATED
+#             self.resp["message"] = "Attendance updated successfully"
+#             self.resp["data"] = model_to_dict(user_attendence)
+#         else:
+#             self.resp["status"] = False
+#             self.resp["status_code"] = status.HTTP_400_BAD_REQUEST
+#             self.resp['message'] = validated_data['error']
+#         return self.resp
+    
+    
+    
+    
+    
+    
+
+
+
+class UserAttendenceSerializer(serializers.Serializer):
     status_code = serializers.IntegerField(read_only=True,default=status.HTTP_201_CREATED)
     status = serializers.BooleanField(read_only=True)
     message = serializers.CharField(read_only=True,default=None)
@@ -284,43 +373,64 @@ class UserAttendanceSerializer(serializers.Serializer):
         request = self.context["request"]
         self.request = request
         self.user = request.user
-        self.fields["user_ids"] = serializers.ListField(required = True,write_only=True)
-        self.fields["status"] = serializers.CharField(required = True,write_only=True)
+        self.fields["attendance"] = serializers.ListField(child=serializers.DictField(), required=True,write_only=True)
+        # self.fields["date"] = serializers.CharField(required = False,write_only=True)
+        
+    '''{"attendance": [
+        { "user_id" : 1,"status": "absent"},
+        { "user_id" : 2,"status": "present"},
+        ]}'''
         
     def validate(self, attrs):
         errors = None
-        attrs['valid'] = True
-        user_ids = attrs.get('user_ids')
-        users = user_ids[0].split(",")        
-        user_id = 0
-        users_list = []
-        for user_pk in users:
-            user_qs = Users.objects.filter(pk = user_pk)
-            user_id+=1
-            if user_qs.exists():
-                users_list.append(user_pk)
+        attrs['valid'] = False
+        attrs['for_update'] = False
+        for idx, attend in enumerate(attrs.get('attendance', [])):
+            user_qs = Users.objects.filter(pk =  attend['user_id'])
+            if 'user_id' not in attend.keys():
+                errors = 'user_id is required'
+                
+            if 'status' not in attend.keys():
+                errors = 'user_id is required'
+                
             else:
-                errors = f"User with id {user_id} is not found."
+                print(attend,"++++++++++++++++")
+                if attend['status'] not in ['present','absent','on_leave']:
+                    errors = "Status should be 'present','absent','on_leave'."
+                else:
+                    pass
+            if not user_qs.exists():
+                errors = 'User not found of given user_id'
+            else:
+                if UserAttendance.objects.filter(user = user_qs.first()).exists():
+                    attrs['for_update'] = True
+            print(errors,"00000000")
+            if errors is not None:
+                attrs['errors'] = errors
                 attrs['valid'] = False
-        if errors is not None:
-            attrs['error'] = errors
-            attrs['valid'] = False
-        else:
-            attrs['user_qs'] = users_list
-            
+            else:
+                attrs['user_obj'] = user_qs.first()
+                attrs['attend_status'] = attend['status']
+                attrs['valid'] = True
+        print(attrs,"+++++++hello+++++++++")
         return attrs
-        
-        
+    
+    
     def create(self, validated_data):
         if validated_data['valid'] == True:
-            for user in validated_data['user_qs']:
-                for i in user:
-                    UserAttendance.objects.create(
-                        user = i,
-                        updated_by = self.user,
-                        
-                    )
-            pass
+            with transaction.atomic():
+                if validated_data['for_update'] == True:
+                    user_allocate = UserAttendance.objects.filter(user = validated_data['user_obj']).first()
+                    user_allocate.status = validated_data['attend_status']
+                    user_allocate.save()
+                else:
+                    UserAttendance.objects.create(user = validated_data['user_obj'],
+                                                  status = validated_data['attend_status'],
+                                                  updated_by = self.user
+                                                  )
+                self.resp['message'] = 'Attendence created or updated successfully'
         else:
-            pass
+            self.resp['message'] = validated_data['errors']
+            self.resp['status'] = False
+            self.resp['status_code'] = status.HTTP_400_BAD_REQUEST
         return self.resp

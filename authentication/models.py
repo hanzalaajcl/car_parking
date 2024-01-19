@@ -66,7 +66,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     role = models.ForeignKey(Role, on_delete=models.CASCADE, null=True, blank=True)
     first_name = models.CharField(max_length=125, null=True, blank=True)
     last_name = models.CharField(max_length=125, null=True, blank=True)
-    cnic = models.CharField(max_length=13, null=True, blank=True)
+    cnic = models.CharField(max_length=17, null=True, blank=True)
     age = models.IntegerField(null=True, blank=True)
     gender = models.CharField(max_length=100, null=True, blank=True)
     hired_date = models.DateField()
@@ -120,14 +120,14 @@ class UserAttendance(models.Model):
     ATTENDENCE_STATUS = (
         ('present', 'Present'),
         ('absent', 'Absent'),
-        ('leave', 'On Leave')
+        ('on_leave', 'On Leave')
     )
-    user = models.ForeignKey(Users,on_delete=models.CASCADE)
+    user = models.ForeignKey(Users,on_delete=models.CASCADE,related_name='user_attendance')
     date = models.DateField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=ATTENDENCE_STATUS,default = 'present')
     updated_by = models.ForeignKey(Users, on_delete=models.CASCADE,related_name='attendance')
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     address = models.CharField(max_length=155, null=True, blank=True)
     
     def __str__(self):

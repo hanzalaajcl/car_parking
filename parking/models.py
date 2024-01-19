@@ -1,11 +1,29 @@
 from django.db import models
 from authentication.models import (Users)
+import os
+from datetime import datetime
+from django.conf import settings
+
+
+
+
+def save_vehicle_image(instance, filename):
+    print(instance,"================================")
+    file_extension = os.path.splitext(filename)[1].lstrip('.')
+    current_datetime = datetime.now().strftime('%Y%m%d%H%M%S')
+    target_dir = f'profile_images/{instance.pk}'
+    file_dir = os.path.join(settings.MEDIA_ROOT, target_dir)
+    if not os.path.isdir(file_dir):
+        os.makedirs(file_dir, 0o777)
+    return os.path.join(target_dir, f'{current_datetime}.{file_extension}')
+
+
 
 
 # Create your models here.
 class ParkingPlaza(models.Model):
     name = models.CharField(max_length=50, blank=True,null = True)
-    address = models.CharField(max_length=50, blank=True,null = True)
+    address = models.CharField(max_length=512, blank=True,null = True)
     area = models.FloatField(blank=True,null = True)
     latitude = models.FloatField()
     longitude = models.FloatField()
@@ -30,6 +48,7 @@ class Vehicle(models.Model):
     register_time = models.TimeField(auto_now_add=True)
     status = models.BooleanField(default=False)
     charges = models.FloatField()
+    vehicle_image = models.FileField(upload_to=save_vehicle_image, null=True, blank=True)
     
     def __str__(self):
         return f'vehicle_model {self.vehicle_model} is registered by {self.register_by}'
