@@ -57,9 +57,9 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
     if email_host.endswith('/'):
         email_host = email_host[:-1]
     email_plaintext_message = "{}{}?token={}".format(email_host,reverse('reset-password-confirm'), reset_password_token.key)
-    email_body = f"Hello {get_full_name(reset_password_token.user)},\n\nPlease click on the following link to reset your password:\n\n{email_plaintext_message}\n\nIf you didn't request a password reset, please ignore this email.\n\nThank you"
+    email_body = f"Hello {get_full_name(reset_password_token.user)},\n\nThank you for joing with us! We’re excited to let you know that your account has been created in the Parking App.\n\nPlease click on the following link to set your password and verify your account:\n\n{email_plaintext_message}\n\nIf you didn't request a password reset, please ignore this email.\n\nThank you"
 
-    email_subject = "Requested For Paswords Reset"
+    email_subject = "Thanks for Joining Parking App"
     # send_email_to_user(reset_password_token.user, email_subject, email_body)
     send_email_to_user(email_body, reset_password_token.user.email, email_subject)
 

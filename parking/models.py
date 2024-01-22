@@ -11,7 +11,7 @@ def save_vehicle_image(instance, filename):
     print(instance,"================================")
     file_extension = os.path.splitext(filename)[1].lstrip('.')
     current_datetime = datetime.now().strftime('%Y%m%d%H%M%S')
-    target_dir = f'profile_images/{instance.pk}'
+    target_dir = f'vehicle_images/{instance.pk}'
     file_dir = os.path.join(settings.MEDIA_ROOT, target_dir)
     if not os.path.isdir(file_dir):
         os.makedirs(file_dir, 0o777)
@@ -64,10 +64,10 @@ class ParkingVehicle(models.Model):
     vehicle_model = models.CharField(max_length = 155)
     check_in_date = models.DateField(auto_now_add=True)
     check_in_time = models.TimeField(auto_now_add=True)
-    check_in_plaza = models.ForeignKey(ParkingPlaza,on_delete = models.CASCADE)
+    check_in_plaza = models.ForeignKey(ParkingPlaza,on_delete = models.CASCADE,related_name='plaza_of_vehicles')
     check_out_date = models.DateField(blank = True,null= True)
     check_out_time = models.TimeField(blank = True,null= True)
-    check_in_by = models.ForeignKey(Users,on_delete=models.CASCADE)
+    check_in_by = models.ForeignKey(Users,on_delete=models.CASCADE,related_name= "user_who_checked_in")
     check_out_by = models.ForeignKey(Users,on_delete=models.CASCADE,blank = True,null= True,related_name= "user_who_checked_out")
     
     def __str__(self):

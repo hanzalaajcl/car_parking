@@ -2,7 +2,8 @@ from django.urls import path, include
 from .views import GetVehicleModelbyTypeView,CreateParkingPlazaView\
     ,GetVehicleTypeView,ParkingVehicleCheckInView\
     ,GetParkingPlazaView,ParkingVehicleCheckOutView\
-    ,GetVehicleModel
+    ,GetVehicleModel,DashboardViews,CardsCountAndRecentActivity\
+    ,GetParkingVehicleCount
 
 urlpatterns = [
     path('create_plaza/', CreateParkingPlazaView.as_view(),name='create_plaza'),
@@ -14,4 +15,10 @@ urlpatterns = [
 
 
     path('get_vehicle_model/', GetVehicleModel.as_view(),name='get_vehicle_model'),
+    
+    
+    path('get_dashboard/', DashboardViews.as_view(),name='get_dashboard'),
+    path('get_counts_card/', CardsCountAndRecentActivity.as_view(),name='get_counts_card'),
+    
+    path('get_user_parking_list/', GetParkingVehicleCount.as_view(),name='get_user_parking_list'),
 ]

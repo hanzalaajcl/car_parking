@@ -381,6 +381,9 @@ class UserAttendenceSerializer(serializers.Serializer):
         { "user_id" : 2,"status": "present"},
         ]}'''
         
+
+        
+        
     def validate(self, attrs):
         errors = None
         attrs['valid'] = False
@@ -426,11 +429,63 @@ class UserAttendenceSerializer(serializers.Serializer):
                 else:
                     UserAttendance.objects.create(user = validated_data['user_obj'],
                                                   status = validated_data['attend_status'],
-                                                  updated_by = self.user
+                                                  updated_by = self.user,
                                                   )
+                    
                 self.resp['message'] = 'Attendence created or updated successfully'
         else:
             self.resp['message'] = validated_data['errors']
             self.resp['status'] = False
             self.resp['status_code'] = status.HTTP_400_BAD_REQUEST
         return self.resp
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    '''{attendances_of_user": {
+        'attendance': [
+        { "user_id" : 1,"status": "absent"},
+        { "user_id" : 2,"status": "present"},
+        ],
+        'date': '2021-01-01'
+        }}'''
+        
+        
+        
+        
+# class AttendanceSerializer(serializers.Serializer):
+#     user_id = serializers.IntegerField()
+#     status = serializers.CharField()
+
+# class AttendancesSerializer(serializers.Serializer):
+#     attendance = AttendanceSerializer(many=True)
+
+#     def validate_attendance(self, value):
+#         print(value,"++++++++++++++++")
+#         # Validate each attendance entry
+#         for attend in value:
+#             user_id = attend.get('user_id')
+#             status = attend.get('status')
+
+#             if user_id is None:
+#                 raise serializers.ValidationError("user_id is required")
+
+#             if status is None:
+#                 raise serializers.ValidationError("status is required")
+
+#             if status not in ['present', 'absent', 'on_leave']:
+#                 raise serializers.ValidationError("Status should be 'present', 'absent', 'on_leave'.")
+
+#             user_qs = Users.objects.filter(pk=user_id)
+#             if not user_qs.exists():
+#                 raise serializers.ValidationError(f"User not found for user_id: {user_id}")
+
+#         return value

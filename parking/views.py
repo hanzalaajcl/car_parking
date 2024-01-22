@@ -1,14 +1,15 @@
 from django.forms import model_to_dict
 from django.shortcuts import render
+from authentication.models import Users
 from authentication.permissions import (IsAdmin,IsUser)
 from .serializers import CreateParkingPlazaSerializer,CreateParkingVehicleCheckInSerializer
 from rest_framework.views import APIView
 from rest_framework import status
 from rest_framework.response import Response
-from .models import ParkingVehicle, Vehicle,ParkingPlaza
+from .models import ParkingVehicle, UserAllocation, Vehicle,ParkingPlaza
 from rest_framework import generics, permissions
 from datetime import datetime,date
-
+from .utils import convert_to_specific_format
 
 # Create your views here.    
     
@@ -206,3 +207,204 @@ class GetVehicleModel(APIView):
             'data': unique_vehicle_types
         }
         return Response(resp,status=resp['status_code'])
+    
+    
+    
+    
+class GetParkingVehicleCount(APIView):
+    # permission_classes = [IsAdmin]
+    permission_classes = [permissions.AllowAny]
+    
+    
+    def get(self,request):
+        date = self.request.GET.get('date',None)
+        user_allocations = UserAllocation.objects.all()
+        
+        all_data = []
+        if date is not None:
+            result_date = convert_to_specific_format(date)
+            if result_date['status'] == False:
+                return Response({
+                    'status': result_date['status'],
+                    'status_code':status.HTTP_400_BAD_REQUEST,
+                    'message':result_date['message'],
+                    'data': {}
+                },status=status.HTTP_400_BAD_REQUEST)
+            else:
+                for user_allocation in user_allocations:
+                    parking_vehicles = ParkingVehicle.objects.filter(check_in_plaza = user_allocation.parking_plaza,check_in_date = result_date['date'])
+                    parking_check_in_count = parking_vehicles.filter(check_in_by = user_allocation.user,check_out_by = None).count()
+                    parking_check_out_count = parking_vehicles.filter(check_in_by = user_allocation.user,check_out_by = user_allocation.user).count()
+                    data = {
+                        'user_id': user_allocation.user.pk,
+                        'first_name': user_allocation.user.first_name,
+                        'last_name': user_allocation.user.last_name,
+                        'email': user_allocation.user.email,
+                        'parking_plaza_id': parking_vehicles.first().check_in_plaza.pk,
+                        'parking_plaza_name': parking_vehicles.first().check_in_plaza.name,
+                        'check_in_plaza_count': parking_check_in_count,
+                        'check_out_plaza_count': parking_check_out_count,
+                    }
+                    all_data.append(data)
+        else:
+            for user_allocation in user_allocations:
+                parking_vehicles = ParkingVehicle.objects.filter(check_in_plaza = user_allocation.parking_plaza)
+                parking_check_in_count = parking_vehicles.filter(check_in_by = user_allocation.user,check_out_by = None).count()
+                parking_check_out_count = parking_vehicles.filter(check_in_by = user_allocation.user,check_out_by = user_allocation.user).count()
+                data = {
+                    'user_id': user_allocation.user.pk,
+                    'first_name': user_allocation.user.first_name,
+                    'last_name': user_allocation.user.last_name,
+                    'email': user_allocation.user.email,
+                    'parking_plaza_id': parking_vehicles.first().check_in_plaza.pk,
+                    'parking_plaza_name': parking_vehicles.first().check_in_plaza.name,
+                    'check_in_plaza_count': parking_check_in_count,
+                    'check_out_plaza_count': parking_check_out_count,
+                }
+                all_data.append(data)
+                
+        return Response({
+            'status': True,
+            'status_code': status.HTTP_200_OK,
+            'message': 'Parking Vehicle Count',
+            'data': all_data
+        },status=status.HTTP_200_OK )
+                  
+            
+            
+    
+class DashboardViews(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        resp = {
+            'status': True,
+            'status_code': status.HTTP_200_OK,
+            'message': 'Dashboard Details',
+            'data': {
+                'parkingLotsTrends': {'labels': [], 'datasets': []},
+                'userPerformanceTrends': {'labels': [], 'datasets': []},
+            },
+        }
+
+        plaza_names = []
+        parked_counts = []
+        # colors = ['(opacity = 1) => #3333', '(opacity = 1) => #addd', '(opacity = 1) => #FAFA', '(opacity = 1) => #DAA']
+        colors =  [
+                "#3333",
+                "#addd",
+                "#FAFA",
+                "#DAA"
+            ]
+        users_name = []
+        plaza_of_users = []
+
+        date = request.GET.get('date', None)
+        plazas = ParkingPlaza.objects.all()
+        users = Users.objects.filter(role__name = 'user')
+
+        if date is None:
+            current_date = datetime.now().date()
+            current_date_str = current_date.strftime('%Y-%m-%d')
+        else:
+            date = convert_to_specific_format(date)
+            if date['status'] == False:
+                return Response({
+                    'status': date['status'],
+                    'status_code': status.HTTP_400_BAD_REQUEST,
+                    'message': date['message'],
+                    'data': {},
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            current_date_str = date['date']  # Use the formatted date
+
+        for plaza in plazas:
+            parking_vehicles = ParkingVehicle.objects.filter(check_in_date=current_date_str, check_in_plaza=plaza)
+            plaza_names.append(plaza.name)
+            parked_counts.append(parking_vehicles.count())
+
+        resp['data']['parkingLotsTrends']['labels'] = plaza_names
+        resp['data']['parkingLotsTrends']['datasets'] = [
+            {
+                'data': parked_counts,
+                'colors': colors,
+            }
+        ]
+        
+        for user in users:
+            parking_vehicles_by_user = ParkingVehicle.objects.filter(check_in_date=current_date_str, check_in_by=user)
+            users_name.append(user.first_name)
+            plaza_of_users.append(parking_vehicles_by_user.count())
+            
+        resp['data']['userPerformanceTrends']['labels'] = users_name
+        resp['data']['userPerformanceTrends']['datasets'] = [
+            {
+                'data': plaza_of_users,
+                'colors': colors,
+            }
+        ]
+            
+        return Response(resp, status=status.HTTP_200_OK)
+    
+
+
+
+
+
+from itertools import chain
+
+class CardsCountAndRecentActivity(APIView):
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request, *args, **kwargs):
+        resp = {
+            'status': True,
+            'status_code': status.HTTP_200_OK,
+            'message': 'All cards count',
+            'data': {'counts': {}, 'recent_activity': []},
+        }
+
+        parking_qs = ParkingVehicle.objects.all()
+
+        resp['data']['counts']['users_count'] = UserAllocation.objects.all().count()
+        resp['data']['counts']['vechicles_type_count'] = Vehicle.objects.values('vehicle_type').distinct().count()
+        resp['data']['counts']['parking_plaza_count'] = ParkingPlaza.objects.all().count()
+        resp['data']['counts']['registration_no_count'] = parking_qs.values('registration_number').distinct().count()
+        resp['data']['counts']['no_of_parked_vehicles'] = parking_qs.filter(check_out_date__isnull=False).count()
+        
+        # Recent Activity
+        activity = []
+
+        recently_checkedin_vehicle = parking_qs.filter(check_out_date__isnull=True).order_by('-check_in_date', '-check_in_time')[:5]
+        recently_checkedout_vehicle = parking_qs.filter(check_out_date__isnull=False).order_by('-check_out_date', '-check_out_time')[:5]
+
+        all_recent_checkin_events = list(recently_checkedin_vehicle)
+        all_recent_checkout_events = list(recently_checkedout_vehicle)
+
+        # Combine check-in and check-out events, preserving order
+        all_recent_vehicle_events = sorted(
+            all_recent_checkin_events + all_recent_checkout_events,
+            key=lambda event: getattr(event, 'check_in_date' if event.check_out_date is None else 'check_out_date'),
+            reverse=True
+        )
+
+        for event in all_recent_vehicle_events:
+            if event.check_out_date is not None:
+                heading = f'{event.check_out_by.first_name} Check Out at {event.check_in_plaza.name}'
+                text = f'{event.check_out_by.first_name} Check Out upon leaving from {event.check_in_plaza.name}'
+                date_time = f'check out date and time is {str(event.check_out_date), str(event.check_out_time)}'
+            else:
+                heading = f'{event.check_in_by.first_name} Check In at {event.check_in_plaza.name}'
+                text = f'{event.check_in_by.first_name} Check In upon arriving at {event.check_in_plaza.name}'
+                date_time = f'check in date and time is {str(event.check_in_date), str(event.check_in_time)}'
+            
+            recent_data = {
+                'heading': heading,
+                'text': text,
+                'date_time': date_time,
+            }
+            activity.append(recent_data)
+        
+        resp['data']['recent_activity'] = activity
+        return Response(resp, status=status.HTTP_200_OK)
+
