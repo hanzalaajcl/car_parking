@@ -364,10 +364,10 @@ class CardsCountAndRecentActivity(APIView):
 
         parking_qs = ParkingVehicle.objects.all()
 
-        resp['data']['counts']['users_count'] = UserAllocation.objects.all().count()
-        resp['data']['counts']['vechicles_type_count'] = Vehicle.objects.values('vehicle_type').distinct().count()
-        resp['data']['counts']['parking_plaza_count'] = ParkingPlaza.objects.all().count()
-        resp['data']['counts']['registration_no_count'] = parking_qs.values('registration_number').distinct().count()
+        resp['data']['counts']['users'] = UserAllocation.objects.all().count()
+        resp['data']['counts']['vechicles_type'] = Vehicle.objects.values('vehicle_type').distinct().count()
+        resp['data']['counts']['parking_plaza'] = ParkingPlaza.objects.all().count()
+        resp['data']['counts']['registration_no'] = parking_qs.values('registration_number').distinct().count()
         resp['data']['counts']['no_of_parked_vehicles'] = parking_qs.filter(check_out_date__isnull=False).count()
         
         # Recent Activity
