@@ -12,4 +12,4 @@ class IsAdmin(permissions.BasePermission):
     message = {'status':False,'status_code':403,'message':'Only admin users are allowed to perform this action. ','data':{}}
     def has_permission(self, request, view):
         return request.user.is_authenticated and \
-            request.user.is_superuser
+            Users.objects.filter(pk=request.user.pk, role__name="admin").exists()

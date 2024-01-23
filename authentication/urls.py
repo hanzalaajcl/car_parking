@@ -6,7 +6,8 @@ from .views import (
                     GetProfileView,
                     ChangePasswordVew,
                     UserAttendence,
-                    GetUserAttendanceStatus
+                    GetUserAttendanceStatus,
+                    AdminSignupRegisterView
                     )
 from django_rest_passwordreset.views import (ResetPasswordConfirm,ResetPasswordRequestToken)
 urlpatterns = [
@@ -19,4 +20,7 @@ urlpatterns = [
     path('passwor_change/', ChangePasswordVew.as_view(), name='passwor_change'),
     path('create_user_attendence/', UserAttendence.as_view(), name='create_user_attendence'),
     path('get_user_attendence/', GetUserAttendanceStatus.as_view(), name='get_user_attendence'),
+    
+    
+    path('admin_signup/', AdminSignupRegisterView.as_view(), name='admin_signup'),
 ]

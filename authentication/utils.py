@@ -30,6 +30,17 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from parking.models import GlobalConfiguration
+import random
+import string
+
+def generate_auth_key(length):
+    characters = string.ascii_letters + string.digits
+    auth_key = ''.join(random.choice(characters) for _ in range(length))
+    return auth_key
+
+def is_auth_key_unique(auth_key):
+    return Users.objects.filter(auth_key=auth_key).first() is None
+
 
 
 

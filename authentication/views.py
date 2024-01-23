@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import (CustomTokenObtainPairSerializer,CreateUserSerializer,CustomPasswordChangeSerializer,UserAttendenceSerializer)
+from .serializers import (CustomTokenObtainPairSerializer,CreateUserSerializer,CustomPasswordChangeSerializer,UserAttendenceSerializer,RegisterSerializer)
 from rest_framework import generics, permissions
 from .permissions import IsAdmin,IsUser
 from rest_framework.views import APIView
@@ -12,22 +12,37 @@ from django_rest_passwordreset.views import (ResetPasswordConfirm)
 # Create your views here.
 
     
+class AdminSignupRegisterView(APIView):
+    permission_classes = [permissions.AllowAny]
+    # serializer_class = RegisterSerializer
+    
+    def post(self, request, *args, **kwargs):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            response_data = serializer.save()
+            # Use the status code from the serializer's response
+            return Response(response_data, status=response_data.get('status_code', status.HTTP_200_OK))
+        else:
+            # Handle invalid serializer with a 400 status code
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     
 class UserLoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
     serializer_class = CustomTokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
-            serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
 
-            try:
-                serializer.is_valid(raise_exception=True)
-            except Exception as e:
-                # Handle validation errors and set the response status code
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            # Handle validation errors and set the response status code
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            response_data = serializer.validated_data
-            return Response(response_data, status=response_data.get('status_code', status.HTTP_200_OK))
+        response_data = serializer.validated_data
+        print("Response data", response_data)
+        return Response(response_data, status=response_data.get('status_code', status.HTTP_200_OK))
     
     
     
@@ -88,9 +103,7 @@ class ChangePasswordVew(generics.CreateAPIView):
     
     
     
-# class UserAttendence(generics.CreateAPIView):
-#     permission_classes = [IsAdmin]
-#     serializer_class = UserAttendanceSerializer
+
     
 class UserAttendence(APIView):
     permission_classes = [IsAdmin]

@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import  BaseUserManager
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 import os
@@ -93,7 +92,6 @@ class Users(AbstractBaseUser, PermissionsMixin):
     
     def save(self, *args, **kwargs):
         if self.pk is None:
-            print("----------------")
             # New user, set and hash the password
             self.set_password(self.password)
         super().save(*args, **kwargs)

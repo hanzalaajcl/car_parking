@@ -240,8 +240,8 @@ class GetParkingVehicleCount(APIView):
                         'first_name': user_allocation.user.first_name,
                         'last_name': user_allocation.user.last_name,
                         'email': user_allocation.user.email,
-                        'parking_plaza_id': parking_vehicles.first().check_in_plaza.pk,
-                        'parking_plaza_name': parking_vehicles.first().check_in_plaza.name,
+                        'parking_plaza_id': parking_vehicles.first().check_in_plaza.pk if parking_vehicles.exists() and parking_vehicles.first() else None,
+                        'parking_plaza_name': parking_vehicles.first().check_in_plaza.name if parking_vehicles.exists() and parking_vehicles.first() else None,
                         'check_in_plaza_count': parking_check_in_count,
                         'check_out_plaza_count': parking_check_out_count,
                     }
@@ -256,8 +256,8 @@ class GetParkingVehicleCount(APIView):
                     'first_name': user_allocation.user.first_name,
                     'last_name': user_allocation.user.last_name,
                     'email': user_allocation.user.email,
-                    'parking_plaza_id': parking_vehicles.first().check_in_plaza.pk,
-                    'parking_plaza_name': parking_vehicles.first().check_in_plaza.name,
+                    'parking_plaza_id': parking_vehicles.first().check_in_plaza.pk if parking_vehicles.exists() and parking_vehicles.first() else None,
+                    'parking_plaza_name': parking_vehicles.first().check_in_plaza.name if parking_vehicles.exists() and parking_vehicles.first() else None,
                     'check_in_plaza_count': parking_check_in_count,
                     'check_out_plaza_count': parking_check_out_count,
                 }
@@ -350,8 +350,6 @@ class DashboardViews(APIView):
 
 
 
-
-from itertools import chain
 
 class CardsCountAndRecentActivity(APIView):
     permission_classes = [permissions.AllowAny]

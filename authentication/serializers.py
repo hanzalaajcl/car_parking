@@ -12,28 +12,31 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
 from django.utils.translation import gettext as _
 import magic
-from .utils import verify_email_on_user_registeration 
+from .utils import generate_auth_key, get_full_name, is_auth_key_unique, verify_email_on_user_registeration 
 from datetime import datetime   
 from parking.models import ParkingPlaza,UserAllocation
+from django.contrib.auth.hashers import check_password
+
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.user = None
-        self.fields["email"] = serializers.CharField(required = True)
-        self.fields["password"] = serializers.CharField(required = True)
+        # self.fields["username"] = serializers.CharField(required=True, write_only=True)
+        self.fields["email"] = serializers.CharField(required=True, write_only=True)
+        self.fields["password"] = serializers.CharField(required=True, write_only=True)
     
     def validate(self, attrs):
-        email = attrs.get('email')
+        email = attrs.get('email').lower()
         password = attrs.get('password')
         try:
             user_obj = Users.objects.get(email=email)
-            print(user_obj)
+            print(user_obj,"++++++++++++++++")
         except Users.DoesNotExist as e:
             user_obj =  None
         if user_obj is not None:
             authenticate_kwargs = {
-                "email": user_obj.email,
+                "username": user_obj.email,
                 "password": password,
             }
             print("authenticate_kwargs",authenticate_kwargs)
@@ -48,8 +51,10 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 return {'message': 'Invalid password'}
             else:
                 data = {
+                    'pk': user_obj.pk,
                     'email' : self.user.email,
-                    'role' : self.user.role.name
+                    'full_name': get_full_name(user_obj),
+                    'role' : user_obj.role.name
                 }
                 return data 
         else:
@@ -272,91 +277,6 @@ class CustomPasswordChangeSerializer(serializers.Serializer):
     
     
     
-# class UserAttendanceSerializer(serializers.Serializer):
-#     status_code = serializers.IntegerField(read_only=True,default=status.HTTP_201_CREATED)
-#     status = serializers.BooleanField(read_only=True)
-#     message = serializers.CharField(read_only=True,default=None)
-#     data = serializers.DictField(read_only=True,default={})
-    
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-#         self.resp = {'status' : False, 'message' : None,'data' : None,'status_code' : status.HTTP_200_OK} 
-#         request = self.context["request"]
-#         self.request = request
-#         self.user = request.user
-#         self.fields["user_ids"] = serializers.ListField(required = True,write_only=True)
-#         self.fields["status"] = serializers.CharField(required = True,write_only=True)
-#         self.fields["date"] = serializers.CharField(required = False,write_only=True)
-        
-#     def validate(self, attrs):
-#         errors = None
-#         attrs['valid'] = True
-#         data = attrs.get('data',None)
-#         if data is not None:
-#             try:
-#                 date = datetime.strptime(date, "%d/%m/%Y").date()
-#                 attrs['date'] = date
-#             except ValueError:
-#                 errors = "date should be in the format 'DD/MM/YYYY'."
-#                 attrs['valid'] = False
-#         else:
-#             attrs['date'] = datetime.now().date()
-                
-            
-#         user_ids = attrs.get('user_ids')
-#         print(user_ids,"================================")
-#         status = attrs.get('status')
-#         users = user_ids[0].split(",")  
-#         print(users,'++++++++++++++++')      
-#         user_id = 0
-#         users_list = []
-#         for user_pk in users:
-#             print(user_pk,"pppppppppppppppppp")
-#             user_qs = Users.objects.filter(pk = user_pk)
-#             user_id+=1
-#             if user_qs.exists():
-#                 users_list.append(user_pk)
-#             else:
-#                 errors = f"User with id {user_id} is not found."
-#                 attrs['valid'] = False
-                
-#         if status is not ['present','absent','on_leave']:
-#             errors = "Status should be 'present','absent','on_leave'."
-#             attrs['valid'] = False
-            
-#         if errors is not None:
-#             attrs['error'] = errors
-#             attrs['valid'] = False
-#         else:
-#             attrs['user_qs'] = users_list
-            
-#         return attrs
-        
-        
-#     def create(self, validated_data):
-#         if validated_data['valid'] == True:
-#             for user in validated_data['user_qs']:
-#                 for i in user:
-#                     user_attendence = UserAttendance.objects.create(
-#                         user = i,
-#                         updated_by = self.user,
-#                         status = validated_data['status']
-                        
-#                     )
-#             self.resp["status"] = True
-#             self.resp["status_code"] = status.HTTP_201_CREATED
-#             self.resp["message"] = "Attendance updated successfully"
-#             self.resp["data"] = model_to_dict(user_attendence)
-#         else:
-#             self.resp["status"] = False
-#             self.resp["status_code"] = status.HTTP_400_BAD_REQUEST
-#             self.resp['message'] = validated_data['error']
-#         return self.resp
-    
-    
-    
-    
-    
     
 
 
@@ -381,7 +301,14 @@ class UserAttendenceSerializer(serializers.Serializer):
         { "user_id" : 2,"status": "present"},
         ]}'''
         
-
+    #soon
+    '''{attendances_of_user": {
+    'attendance': [
+    { "user_id" : 1,"status": "absent"},
+    { "user_id" : 2,"status": "present"},
+    ],
+    'date': '2021-01-01'
+    }}'''
         
         
     def validate(self, attrs):
@@ -397,7 +324,6 @@ class UserAttendenceSerializer(serializers.Serializer):
                 errors = 'user_id is required'
                 
             else:
-                print(attend,"++++++++++++++++")
                 if attend['status'] not in ['present','absent','on_leave']:
                     errors = "Status should be 'present','absent','on_leave'."
                 else:
@@ -407,7 +333,6 @@ class UserAttendenceSerializer(serializers.Serializer):
             else:
                 if UserAttendance.objects.filter(user = user_qs.first()).exists():
                     attrs['for_update'] = True
-            print(errors,"00000000")
             if errors is not None:
                 attrs['errors'] = errors
                 attrs['valid'] = False
@@ -415,7 +340,6 @@ class UserAttendenceSerializer(serializers.Serializer):
                 attrs['user_obj'] = user_qs.first()
                 attrs['attend_status'] = attend['status']
                 attrs['valid'] = True
-        print(attrs,"+++++++hello+++++++++")
         return attrs
     
     
@@ -438,54 +362,103 @@ class UserAttendenceSerializer(serializers.Serializer):
             self.resp['status'] = False
             self.resp['status_code'] = status.HTTP_400_BAD_REQUEST
         return self.resp
+ 
+ 
+class RegisterSerializer(serializers.Serializer):
+    token_class = RefreshToken
+    status_code = serializers.IntegerField(read_only = True,default =status.HTTP_400_BAD_REQUEST)
+    status = serializers.BooleanField(read_only=True,default=False)
+    message = serializers.CharField(read_only=True,default =None)
+    data = serializers.DictField(read_only=True,default = None)
     
+    @classmethod
+    def get_token(cls, user):
+        return cls.token_class.for_user(user)
     
-    
-    
-    
-    
-    
+    def __init__(self, *args, **kwargs):
+        self.resp = {'status' : False,'status_code' : status.HTTP_400_BAD_REQUEST,'message': None,'data' : None}
+        super().__init__(*args, **kwargs)
+        self.fields['email'] = serializers.EmailField(required=True,write_only=True) #,validators=[UniqueValidator(queryset=User.objects.all())]
+        self.fields['password'] = serializers.CharField(write_only=True, required=True)#, validators=[cus_password_validator]
+        self.fields['confirm_password'] = serializers.CharField(write_only=True, required=True)
 
-    
-    
-    
-    
-    '''{attendances_of_user": {
-        'attendance': [
-        { "user_id" : 1,"status": "absent"},
-        { "user_id" : 2,"status": "present"},
-        ],
-        'date': '2021-01-01'
-        }}'''
+    def validate(self, attrs):
         
+            
+        errors = None
+        password = attrs['password']
+        password2 = attrs['confirm_password']
+        email = attrs['email']
+        attrs['valid'] = False
+        special_characters = r'!"\#$%&()*+,-./:;<=>?@[\\]^_`{|}~\'•√π÷×§∆£¢€¥°©®™✓'
         
-        
-        
-# class AttendanceSerializer(serializers.Serializer):
-#     user_id = serializers.IntegerField()
-#     status = serializers.CharField()
+        role = Role.objects.filter(name = 'admin')
+        if role.exists():
+            attrs['role'] = role.first()
+        else:
+            errors = "First make Roles."
+            
 
-# class AttendancesSerializer(serializers.Serializer):
-#     attendance = AttendanceSerializer(many=True)
+        if Users.objects.filter(email=email).exists():
+            errors = "This email is already taken."
 
-#     def validate_attendance(self, value):
-#         print(value,"++++++++++++++++")
-#         # Validate each attendance entry
-#         for attend in value:
-#             user_id = attend.get('user_id')
-#             status = attend.get('status')
+        if password != password2:
+            errors = "Password fields didn’t match."
+        if not any(char.islower() for char in password):
+            errors = "Password must contain at least one lowercase letter."
+        if not any(char.isupper() for char in password):
+            errors = "Password must contain at least one uppercase letter."
+        if not any(char in special_characters for char in password):
+            errors = "Password must contain at least one Special character."
 
-#             if user_id is None:
-#                 raise serializers.ValidationError("user_id is required")
-
-#             if status is None:
-#                 raise serializers.ValidationError("status is required")
-
-#             if status not in ['present', 'absent', 'on_leave']:
-#                 raise serializers.ValidationError("Status should be 'present', 'absent', 'on_leave'.")
-
-#             user_qs = Users.objects.filter(pk=user_id)
-#             if not user_qs.exists():
-#                 raise serializers.ValidationError(f"User not found for user_id: {user_id}")
-
-#         return value
+        if errors is None:
+            attrs['valid'] = True
+            if Users.objects.filter(is_superuser=True).exists():
+               attrs['is_superuser'] = True
+            else:
+                attrs['is_superuser'] = False
+        else:
+            attrs['error'] = errors
+        return attrs
+    
+    def create(self, validated_data):
+        print("validated_data:", validated_data)
+        if validated_data['valid'] == True:
+            print("validated_data:", validated_data)
+            with transaction.atomic():
+                auth_key = None
+                while True:
+                    auth_key = generate_auth_key(random.randint(8, 9))
+                    if is_auth_key_unique(auth_key):
+                        break
+                if validated_data['is_superuser']:
+                    
+                    user_obj = Users.objects.create(
+                        email=validated_data['email'],
+                        role = validated_data['role'],
+                        auth_key = auth_key
+                        
+                    )
+                else:
+                    user_obj = Users.objects.create(
+                        email=validated_data['email'],
+                        is_superuser=True,
+                        is_staff=True,
+                        role = validated_data['role'],
+                        auth_key = auth_key
+                        
+                    )
+                print("user_obj:", user_obj)
+                user_obj.set_password(validated_data['password'])
+                user_obj.save()
+                refresh = self.get_token(user_obj)
+                self.resp['status'] = True 
+                self.resp['status_code'] = status.HTTP_201_CREATED
+                self.resp['message'] = 'User created successfully'
+                self.resp["data"] ={
+                "access" : str(refresh.access_token),"refresh" :  str(refresh),
+                "email" : validated_data['email'] }
+        else:
+            self.resp['message'] = validated_data.get('error')
+        print("Response for check: %s" % self.resp)
+        return self.resp
