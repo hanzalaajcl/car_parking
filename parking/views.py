@@ -406,3 +406,50 @@ class CardsCountAndRecentActivity(APIView):
         resp['data']['recent_activity'] = activity
         return Response(resp, status=status.HTTP_200_OK)
 
+
+
+class ParkingPlazaListAndCount(APIView):
+    permission_classes = [permissions.AllowAny]
+    def get(self,request):
+        resp = {
+            'status': True,
+            'status_code': status.HTTP_200_OK,
+            'message': "Parking Plaza List and Count with given date",
+            'data': True
+        }
+        
+        date = request.GET.get('date', None)
+        
+        if date is None:
+            current_date = datetime.now().date()
+            current_date_str = current_date.strftime('%Y-%m-%d')
+        else:
+            date = convert_to_specific_format(date)
+            if date['status'] == False:
+                return Response({
+                    'status': date['status'],
+                    'status_code': status.HTTP_400_BAD_REQUEST,
+                    'message': date['message'],
+                    'data': {},
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            current_date_str = date['date']  # Use the formatted date
+            
+        parking_vehicles_qs = ParkingVehicle.objects.filter(check_in_date=current_date_str)
+        resp['data'] = list(map(lambda x: {
+            
+            'id':x.check_in_plaza.pk,
+            'name':x.check_in_plaza.name,
+            'address':x.check_in_plaza.address,
+            'area':x.check_in_plaza.area,
+            'latitude':x.check_in_plaza.latitude,
+            'longitude':x.check_in_plaza.longitude,
+            'register_date':x.check_in_plaza.register_date,
+            'register_time':x.check_in_plaza.register_time,
+            'status':x.check_in_plaza.status,
+            'count' : parking_vehicles_qs.count(),
+            
+            
+            },parking_vehicles_qs))
+        
+        return Response(resp, status=status.HTTP_200_OK)

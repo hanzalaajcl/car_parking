@@ -3,7 +3,7 @@ from .views import GetVehicleModelbyTypeView,CreateParkingPlazaView\
     ,GetVehicleTypeView,ParkingVehicleCheckInView\
     ,GetParkingPlazaView,ParkingVehicleCheckOutView\
     ,GetVehicleModel,DashboardViews,CardsCountAndRecentActivity\
-    ,GetParkingVehicleCount
+    ,GetParkingVehicleCount,ParkingPlazaListAndCount
 
 urlpatterns = [
     path('create_plaza/', CreateParkingPlazaView.as_view(),name='create_plaza'),
@@ -21,4 +21,7 @@ urlpatterns = [
     path('get_counts_card/', CardsCountAndRecentActivity.as_view(),name='get_counts_card'),
     
     path('get_user_parking_list/', GetParkingVehicleCount.as_view(),name='get_user_parking_list'),
+    
+    
+    path('get_plaza_with_count/', ParkingPlazaListAndCount.as_view(),name='get_plaza_with_count'),
 ]
