@@ -367,9 +367,10 @@ class CardsCountAndRecentActivity(APIView):
         resp['data']['counts']['users'] = UserAllocation.objects.all().count()
         resp['data']['counts']['vechicles_type'] = Vehicle.objects.values('vehicle_type').distinct().count()
         resp['data']['counts']['parking_plaza'] = ParkingPlaza.objects.all().count()
-        resp['data']['counts']['registration_no'] = parking_qs.values('registration_number').distinct().count()
-        resp['data']['counts']['no_of_parked_vehicles'] = parking_qs.filter(check_out_date__isnull=False).count()
-        
+        # resp['data']['counts']['registration_no'] = parking_qs.values('registration_number').distinct().count()
+        # resp['data']['counts']['no_of_parked_vehicles'] = parking_qs.filter(check_out_date__isnull=False).count()
+        resp['data']['counts']['check_out'] = parking_qs.filter(check_out_date__isnull=False).count()
+        resp['data']['counts']['check_in'] = parking_qs.filter(check_out_date__isnull=True).count()
         # Recent Activity
         activity = []
 
@@ -385,23 +386,26 @@ class CardsCountAndRecentActivity(APIView):
             key=lambda event: getattr(event, 'check_in_date' if event.check_out_date is None else 'check_out_date'),
             reverse=True
         )
-
-        for event in all_recent_vehicle_events:
-            if event.check_out_date is not None:
-                heading = f'{event.check_out_by.first_name} Check Out at {event.check_in_plaza.name}'
-                text = f'{event.check_out_by.first_name} Check Out upon leaving from {event.check_in_plaza.name}'
-                date_time = f'check out date and time is {str(event.check_out_date), str(event.check_out_time)}'
-            else:
-                heading = f'{event.check_in_by.first_name} Check In at {event.check_in_plaza.name}'
-                text = f'{event.check_in_by.first_name} Check In upon arriving at {event.check_in_plaza.name}'
-                date_time = f'check in date and time is {str(event.check_in_date), str(event.check_in_time)}'
-            
-            recent_data = {
-                'heading': heading,
-                'text': text,
-                'date_time': date_time,
-            }
-            activity.append(recent_data)
+        try:
+            for event in all_recent_vehicle_events:
+                if event.check_out_date is not None:
+                    print(event.check_out_by,"+++ check-out")
+                    heading = f'{event.check_out_by.first_name} Check Out at {event.check_in_plaza.name}'
+                    text = f'{event.check_out_by.first_name} Check Out upon leaving from {event.check_in_plaza.name}'
+                    date_time = f'check out date and time is {str(event.check_out_date), str(event.check_out_time)}'
+                else:
+                    heading = f'{event.check_in_by.first_name} Check In at {event.check_in_plaza.name}'
+                    text = f'{event.check_in_by.first_name} Check In upon arriving at {event.check_in_plaza.name}'
+                    date_time = f'check in date and time is {str(event.check_in_date), str(event.check_in_time)}'
+                
+                recent_data = {
+                    'heading': heading,
+                    'text': text,
+                    'date_time': date_time,
+                }
+                activity.append(recent_data)
+        except:
+            pass
         
         resp['data']['recent_activity'] = activity
         return Response(resp, status=status.HTTP_200_OK)
