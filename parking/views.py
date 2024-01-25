@@ -434,22 +434,40 @@ class ParkingPlazaListAndCount(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             current_date_str = date['date']  # Use the formatted date
+        parking_plaza_qs = ParkingPlaza.objects.all()
+        details = []
+        for i in parking_plaza_qs:
+            parking_vehicles_qs = ParkingVehicle.objects.filter(check_in_plaza = i,check_in_date = current_date_str)
+            details.append({
+                'id':i.pk,
+                'name':i.name,
+                'address':i.address,
+                'area':i.area,
+                'latitude':i.latitude,
+                'longitude':i.longitude,
+                'register_date':i.register_date,
+                'register_time':i.register_time,
+                'status':i.status,
+                'count' : parking_vehicles_qs.count(),
+                
+                
+                })
+        resp['data'] = details
             
-        parking_vehicles_qs = ParkingVehicle.objects.filter(check_in_date=current_date_str)
-        resp['data'] = list(map(lambda x: {
+        # resp['data'] = list(map(lambda x: {
             
-            'id':x.check_in_plaza.pk,
-            'name':x.check_in_plaza.name,
-            'address':x.check_in_plaza.address,
-            'area':x.check_in_plaza.area,
-            'latitude':x.check_in_plaza.latitude,
-            'longitude':x.check_in_plaza.longitude,
-            'register_date':x.check_in_plaza.register_date,
-            'register_time':x.check_in_plaza.register_time,
-            'status':x.check_in_plaza.status,
-            'count' : parking_vehicles_qs.count(),
+        #     'id':x.check_in_plaza.pk,
+        #     'name':x.check_in_plaza.name,
+        #     'address':x.check_in_plaza.address,
+        #     'area':x.check_in_plaza.area,
+        #     'latitude':x.check_in_plaza.latitude,
+        #     'longitude':x.check_in_plaza.longitude,
+        #     'register_date':x.check_in_plaza.register_date,
+        #     'register_time':x.check_in_plaza.register_time,
+        #     'status':x.check_in_plaza.status,
+        #     'count' : parking_vehicles_qs.count(),
             
             
-            },parking_vehicles_qs))
+        #     },parking_vehicles_qs))
         
         return Response(resp, status=status.HTTP_200_OK)
